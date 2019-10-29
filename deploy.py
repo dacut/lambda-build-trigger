@@ -12,11 +12,13 @@ Options:
 """
 from functools import partial
 from getopt import getopt, GetoptError
-from logging import basicConfig, DEBUG
+from logging import basicConfig, getLogger, DEBUG
 from os.path import basename
 from multiprocessing import Pool
 from sys import argv, exit as sys_exit, stderr, stdout
 import boto3
+
+log = getLogger("deploy")
 
 def main(args):
     """
@@ -25,11 +27,12 @@ def main(args):
     basicConfig(level=DEBUG, format="%(asctime)s %(name)s [%(levelname)s] %(filename)s %(lineno)d: %(message)s")
     sts = boto3.client("sts")
     ident = sts.get_caller_identity()
-    print(f"Caller identity: {ident}")
+    log.debug("Caller identity: %s", ident)
 
     ssm = boto3.client("ssm")
     result = ssm.get_parameter(Name="ping")
-    print(f"SSM: {result['Parameter']['Value']}")
+    
+    log.debug("SSM ping: %s", result['Parameter']['Value'])
 
     acl = "public-read"
     try:
@@ -52,7 +55,7 @@ def main(args):
     dests = []
     for arg in args[1:]:
         if not arg.startswith("s3://"):
-            print(f"Destination must begin with s3://: {arg}", file=stderr)
+            log.error("Destination must begin with s3://: %s", arg)
             return 2
         
         dest = arg[5:]
@@ -66,14 +69,30 @@ def main(args):
         
         dests.append((bucket, key))
 
+    errors = 0
+    successes = 0
+    for bucket, key in dests:
+        try:
+            upload(src, bucket, key, acl)
+            successes += 1
+            log.info("Uploaded to s3://%s/%s", bucket, key)
+        except Exception as e:
+            log.error("Failed to upload to s3://%s/%s: %s", bucket, key, exc_info=True)
+            errors += 1
+    
+    if errors:
+        log.error("Deploy failed: %d succeeded, %d failed", successes, errors)
+        return 1
+    
+    log.info("Deploy succeeded: %d succeeded, 0 failed", successes)
+    return 0
+
     pool = Pool(len(dests))
     results = {
         (bucket, key): pool.apply_async(upload, (src, bucket, key, acl))
         for bucket, key in dests
     }
 
-    errors = 0
-    successes = 0
     for loc, result in results.items():
         result.wait()
         try:
@@ -81,7 +100,7 @@ def main(args):
             successes += 1
         except Exception as e:
             bucket, key = loc
-            print(f"Failed to upload to s3://{bucket}/{key}: {e}", file=stderr)
+            log.error("Failed to upload to s3://%s/%s: %s", bucket, key, e, exc_info=True)
             errors += 1
     
     if errors:
