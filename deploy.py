@@ -145,7 +145,7 @@ def upload(src, bucket, key, acl):
         fd.seek(0)
         s3.put_object(
             ACL=acl, Body=fd, Bucket=bucket, Key=key,
-            ContentMD5=b64encode(md5.digest()),
+            ContentMD5=b64encode(md5.digest()).decode("ascii"),
             Metadata={"x-amz-content-sha256": sha256.hexdigest()})
 
     log.info("Uploaded to s3://%s/%s", bucket, key)
