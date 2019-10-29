@@ -75,9 +75,10 @@ def main(args):
         try:
             upload(src, bucket, key, acl)
             successes += 1
-            log.info("Uploaded to s3://%s/%s", bucket, key)
         except Exception as e:
-            log.error("Failed to upload to s3://%s/%s: %s", bucket, key, exc_info=True)
+            log.error(
+                "Failed to upload to s3://%s/%s: %s", bucket, key, e,
+                exc_info=True)
             errors += 1
     
     if errors:
@@ -100,14 +101,16 @@ def main(args):
             successes += 1
         except Exception as e:
             bucket, key = loc
-            log.error("Failed to upload to s3://%s/%s: %s", bucket, key, e, exc_info=True)
+            log.error(
+                "Failed to upload to s3://%s/%s: %s", bucket, key, e,
+                exc_info=True)
             errors += 1
     
     if errors:
-        print(f"Deploy failed: {successes} succeeded, {errors} failed")
+        log.error(f"Deploy failed: {successes} succeeded, {errors} failed")
         return 1
     
-    print(f"Deploy succeeded: {successes} succeeded, 0 failed")
+    log.info(f"Deploy succeeded: {successes} succeeded, 0 failed")
     return 0
 
 def upload(src, bucket, key, acl):
@@ -123,8 +126,10 @@ def upload(src, bucket, key, acl):
         # Use the S3 location in the specific region
         s3 = boto3.client("s3", region_name=loc)
 
-    s3.upload_file(src, bucket, key, {"ACL": acl})
-    print(f"Uploaded to s3://{bucket}/{key}")
+    with open(src, "rb") as fd:
+        s3.put_object(ACL=acl, Body=fd, Bucket=bucket, Key=key)
+
+    log.info("Uploaded to s3://%s/%s", bucket, key)
 
 def usage(fd=stderr):
     """
