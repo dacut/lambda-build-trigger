@@ -10,12 +10,15 @@ Options:
     -h | --help
         Display this help text.
 """
+from base64 import b64encode
 from functools import partial
 from getopt import getopt, GetoptError
+import hashlib
 from logging import basicConfig, getLogger, DEBUG
 from os.path import basename
 from multiprocessing import Pool
 from sys import argv, exit as sys_exit, stderr, stdout
+from botocore.client import Config
 import boto3
 
 log = getLogger("deploy")
@@ -124,10 +127,26 @@ def upload(src, bucket, key, acl):
     
     if loc:
         # Use the S3 location in the specific region
-        s3 = boto3.client("s3", region_name=loc)
+        s3 = boto3.client(
+            "s3", region_name=loc, config=Config(signature_version="s3v4"))
 
     with open(src, "rb") as fd:
-        s3.put_object(ACL=acl, Body=fd, Bucket=bucket, Key=key)
+        md5 = hashlib.md5()
+        sha256 = hashlib.sha256()
+
+        while True:
+            block = fd.read(65536)
+            if not block:
+                break
+            
+            md5.update(block)
+            sha256.update(block)
+
+        fd.seek(0)
+        s3.put_object(
+            ACL=acl, Body=fd, Bucket=bucket, Key=key,
+            ContentMD5=b64encode(md5.digest()),
+            Metadata={"x-amz-content-sha256": sha256.hexdigest()})
 
     log.info("Uploaded to s3://%s/%s", bucket, key)
 
