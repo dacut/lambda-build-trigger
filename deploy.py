@@ -12,6 +12,7 @@ Options:
 """
 from functools import partial
 from getopt import getopt, GetoptError
+from logging import basicConfig, DEBUG
 from os.path import basename
 from multiprocessing import Pool
 from sys import argv, exit as sys_exit, stderr, stdout
@@ -21,9 +22,14 @@ def main(args):
     """
     Main entrypoint.
     """
+    basicConfig(level=DEBUG, format="%(asctime)s %(name)s [%(levelname)s] %(filename)s %(lineno)d: %(message)s")
     sts = boto3.client("sts")
     ident = sts.get_caller_identity()
     print(f"Caller identity: {ident}")
+
+    ssm = boto3.client("ssm")
+    result = ssm.get_parameter(Name="ping")
+    print(f"SSM: {result['Parameter']['Value']}")
 
     acl = "public-read"
     try:
