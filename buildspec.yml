@@ -1,0 +1,15 @@
+version: 0.2
+phases:
+    install:
+        runtime-versions:
+            docker: 18
+            python: 3.7
+    build:
+        commands:
+            - chmod a+x ./build.sh
+            - ./build.sh
+    post_build:
+        commands:
+            - mv ./export/lambda.zip ./lambda-build-trigger.zip
+            - chmod a+x ./deploy.py
+            - ./deploy.sh ./export/lambda.zip $DEPLOY_BUCKETS
