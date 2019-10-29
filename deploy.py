@@ -21,6 +21,9 @@ def main(args):
     """
     Main entrypoint.
     """
+    sts = boto3.client("sts")
+    ident = sts.get_caller_identity()
+    print(f"Caller identity: {ident}")
 
     acl = "public-read"
     try:
@@ -86,7 +89,15 @@ def upload(src, bucket, key, acl):
     """
     Multiprocessing callback for uploading the file.
     """
-    s3 = boto3.client("s3")
+    s3 = boto3.client("s3", region_name="us-east-1")
+    loc = s3.get_bucket_location(Bucket=bucket).get("LocationConstraint")
+    if loc == "EU":
+        loc = "eu-west-1"
+    
+    if loc:
+        # Use the S3 location in the specific region
+        s3 = boto3.client("s3", region_name=loc)
+
     s3.upload_file(src, bucket, key, {"ACL": acl})
     print(f"Uploaded to s3://{bucket}/{key}")
 
