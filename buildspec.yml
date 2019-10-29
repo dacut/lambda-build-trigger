@@ -12,4 +12,4 @@ phases:
         commands:
             - mv ./export/lambda.zip ./lambda-build-trigger.zip
             - chmod a+x ./deploy.py
-            - ./deploy.py ./export/lambda.zip $DEPLOY_BUCKETS
+            - ./deploy.py ./lambda-build-trigger.zip $DEPLOY_BUCKETS
