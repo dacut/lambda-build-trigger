@@ -3,6 +3,8 @@ Trigger a build from AWS Lambda by cloning a Git repository, writing a
 timestamp to a file, committing it, and pushing the repository back to the
 origin.
 
+![Build status](https://codebuild.us-west-2.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoieUJJVXlJM3d2blpISCtNc0dDaTJkdDZhcTgrR3l1cjk3RXJiV2RDTkkzK1NCbjczU1RhNVRIZS9Nc0hJUkNNSWhGOXlKMS8yZ2xXMVp1VUY5KzVCdGV3PSIsIml2UGFyYW1ldGVyU3BlYyI6IlRsNVJkWHFJakc0RzBlYVMiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=master)
+
 ## Lambda event
 The lambda handler (`index.lambda_handler`) expects an event dictionary with
 the following elements:
