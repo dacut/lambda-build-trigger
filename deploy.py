@@ -28,7 +28,7 @@ def main(args):
     Main entrypoint.
     """
     basicConfig(level=DEBUG, format="%(process)5d %(asctime)s %(name)s [%(levelname)s] %(filename)s %(lineno)d: %(message)s")
-    getLogger().handlers[0].formatter.default_msec_format = ".%03d"
+    getLogger().handlers[0].formatter.default_msec_format = "%s.%03d"
 
     sts = boto3.client("sts")
     ident = sts.get_caller_identity()
