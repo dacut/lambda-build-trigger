@@ -27,7 +27,9 @@ def main(args):
     """
     Main entrypoint.
     """
-    basicConfig(level=DEBUG, format="%(asctime)s %(name)s [%(levelname)s] %(filename)s %(lineno)d: %(message)s")
+    basicConfig(level=DEBUG, format="%(process)5d %(asctime)s %(name)s [%(levelname)s] %(filename)s %(lineno)d: %(message)s")
+    getLogger().handlers[0].formatter.default_msec_format = ".%03d"
+
     sts = boto3.client("sts")
     ident = sts.get_caller_identity()
     log.debug("Caller identity: %s", ident)
@@ -74,22 +76,6 @@ def main(args):
 
     errors = 0
     successes = 0
-    for bucket, key in dests:
-        try:
-            upload(src, bucket, key, acl)
-            successes += 1
-        except Exception as e:
-            log.error(
-                "Failed to upload to s3://%s/%s: %s", bucket, key, e,
-                exc_info=True)
-            errors += 1
-    
-    if errors:
-        log.error("Deploy failed: %d succeeded, %d failed", successes, errors)
-        return 1
-    
-    log.info("Deploy succeeded: %d succeeded, 0 failed", successes)
-    return 0
 
     pool = Pool(len(dests))
     results = {
