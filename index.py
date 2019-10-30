@@ -11,29 +11,13 @@ from tempfile import mkdtemp, TemporaryDirectory
 from typing import Any, Dict, Optional
 
 import boto3
-SSH = "/usr/bin/ssh"
-
-if "LAMBDA_TASK_ROOT" in environ:
-    # Add the task's /bin to $PATH and /lib, /lib64 directories to
-    # LD_LIBRARY_PATH. This captures the git and ssh executables and the
-    # libraries they need and has to be done before we import git.
-    task_root = environ["LAMBDA_TASK_ROOT"]
-    lib_prefix = f"{task_root}/lib64:{task_root}/lib"
-    environ["PATH"] = f"{task_root}/bin:{environ['PATH']}"
-    SSH = f"{task_root}/bin/ssh"
-
-    if "LD_LIBRARY_PATH" in environ:
-        environ["LD_LIBRARY_PATH"] = f"{lib_prefix}:{environ['LD_LIBRARY_PATH']}"
-    else:
-        environ["LD_LIBRARY_PATH"] = lib_prefix
-
 from git import Actor, Repo
 
 DEFAULT_AUTHOR_NAME = "lambda-build-trigger"
 DEFAULT_AUTHOR_EMAIL = "lambda-build-trigger@lambda.internal"
 DEFAULT_TIMESTAMP_FILENAME = ".trigger"
-BASE_SSH_COMMAND = f"""
-{SSH} -oBatchMode=yes -oCheckHostIp=no -oKbdInteractiveAuthentication=no
+BASE_SSH_COMMAND = """
+ssh -oBatchMode=yes -oCheckHostIp=no -oKbdInteractiveAuthentication=no
 -oPasswordAuthentication=no -oPreferredAuthentications=publickey
 -oStrictHostKeyChecking=no -oUpdateHostKeys=no
 """.strip().replace("\n", " ")
@@ -59,7 +43,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     ssh_key_param = event.get("ssh_key_parameter")
     if ssh_key_param is None:
         ssh_key_param = environ.get("SSH_KEY_PARAM")
-    
+
     with TemporaryDirectory() as ssh_dir:
         if ssh_key_param is None:
             log.info(
