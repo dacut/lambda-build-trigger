@@ -12,9 +12,19 @@ from typing import Any, Dict, Optional
 
 import boto3
 
-if (not exists("/usr/bin/git") and "LAMBDA_TASK_ROOT" in environ
-    and exists(f'{environ["LAMBDA_TASK_ROOT"]}/bin/git')):
-    environ["GIT_PYTHON_GIT_EXECUTABLE"] = f'{environ["LAMBDA_TASK_ROOT"]}/bin/git'
+if "LAMBDA_TASK_ROOT" in environ:
+    # Add the task's /bin to $PATH and /lib, /lib64 directories to
+    # LD_LIBRARY_PATH. This captures the git and ssh executables and the
+    # libraries they need and has to be done before we import git.
+    task_root = environ["LAMBDA_TASK_ROOT"]
+    lib_prefix = f"{task_root}/lib64:{task_root}/lib"
+    environ["PATH"] = f"{task_root}/bin:{environ['PATH']}"
+
+    if "LD_LIBRARY_PATH" in environ:
+        environ["LD_LIBRARY_PATH"] = f"{lib_prefix}:{environ['LD_LIBRARY_PATH']}"
+    else:
+        environ["LD_LIBRARY_PATH"] = lib_prefix
+
 from git import Actor, Repo
 
 DEFAULT_AUTHOR_NAME = "lambda-build-trigger"
