@@ -14,7 +14,7 @@ from base64 import b64encode
 from functools import partial
 from getopt import getopt, GetoptError
 import hashlib
-from logging import basicConfig, getLogger, DEBUG
+from logging import basicConfig, getLogger, DEBUG, INFO
 from os.path import basename
 from multiprocessing import Pool
 from sys import argv, exit as sys_exit, stderr, stdout
@@ -29,15 +29,9 @@ def main(args):
     """
     basicConfig(level=DEBUG, format="%(process)5d %(asctime)s %(name)s [%(levelname)s] %(filename)s %(lineno)d: %(message)s")
     getLogger().handlers[0].formatter.default_msec_format = "%s.%03d"
-
-    sts = boto3.client("sts")
-    ident = sts.get_caller_identity()
-    log.debug("Caller identity: %s", ident)
-
-    ssm = boto3.client("ssm")
-    result = ssm.get_parameter(Name="ping")
-    
-    log.debug("SSM ping: %s", result['Parameter']['Value'])
+    getLogger("boto3").setLevel(INFO)
+    getLogger("botocore").setLevel(INFO)
+    getLogger("urllib3").setLevel(INFO)
 
     acl = "public-read"
     try:
@@ -127,12 +121,19 @@ def upload(src, bucket, key, acl):
             
             md5.update(block)
             sha256.update(block)
+        
+        md5_hash = b64encode(md5.digest()).decode("ascii")
+        sha256_hash = sha256.hexdigest()
+        sha256_b64hash = b64encode(sha256.digest()).decode("ascii")
 
         fd.seek(0)
         s3.put_object(
             ACL=acl, Body=fd, Bucket=bucket, Key=key,
-            ContentMD5=b64encode(md5.digest()).decode("ascii"),
-            Metadata={"x-amz-content-sha256": sha256.hexdigest()})
+            ContentMD5=md5_hash,
+            Metadata={
+                "x-amz-content-sha256": sha256_hash,
+                "x-amx-content-sha256-base64": sha256_b64hash,
+            })
 
     log.info("Uploaded to s3://%s/%s", bucket, key)
 
