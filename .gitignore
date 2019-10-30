@@ -108,3 +108,6 @@ export/
 
 # VSCode
 .vscode/
+
+# Local testing
+task-test
