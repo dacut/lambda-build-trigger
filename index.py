@@ -11,6 +11,7 @@ from tempfile import mkdtemp, TemporaryDirectory
 from typing import Any, Dict, Optional
 
 import boto3
+SSH = "/usr/bin/ssh"
 
 if "LAMBDA_TASK_ROOT" in environ:
     # Add the task's /bin to $PATH and /lib, /lib64 directories to
@@ -19,6 +20,7 @@ if "LAMBDA_TASK_ROOT" in environ:
     task_root = environ["LAMBDA_TASK_ROOT"]
     lib_prefix = f"{task_root}/lib64:{task_root}/lib"
     environ["PATH"] = f"{task_root}/bin:{environ['PATH']}"
+    SSH = f"{task_root}/bin/ssh"
 
     if "LD_LIBRARY_PATH" in environ:
         environ["LD_LIBRARY_PATH"] = f"{lib_prefix}:{environ['LD_LIBRARY_PATH']}"
@@ -30,8 +32,8 @@ from git import Actor, Repo
 DEFAULT_AUTHOR_NAME = "lambda-build-trigger"
 DEFAULT_AUTHOR_EMAIL = "lambda-build-trigger@lambda.internal"
 DEFAULT_TIMESTAMP_FILENAME = ".trigger"
-BASE_SSH_COMMAND = """
-ssh -oBatchMode=yes -oCheckHostIp=no -oKbdInteractiveAuthentication=no
+BASE_SSH_COMMAND = f"""
+{SSH} -oBatchMode=yes -oCheckHostIp=no -oKbdInteractiveAuthentication=no
 -oPasswordAuthentication=no -oPreferredAuthentications=publickey
 -oStrictHostKeyChecking=no -oUpdateHostKeys=no
 """.strip().replace("\n", " ")
