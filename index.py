@@ -11,6 +11,10 @@ from tempfile import mkdtemp, TemporaryDirectory
 from typing import Any, Dict, Optional
 
 import boto3
+
+if (not exists("/usr/bin/git") and "LAMBDA_TASK_ROOT" in environ
+    and exists(f'{environ["LAMBDA_TASK_ROOT"]}/git')):
+    environ["GIT_PYTHON_GIT_EXECUTABLE"] = f'{environ["LAMBDA_TASK_ROOT"]}/git')
 from git import Actor, Repo
 
 DEFAULT_AUTHOR_NAME = "lambda-build-trigger"
