@@ -4,7 +4,7 @@ Lambda handler for cloning a repository, writing the current date to a
 file, committing it, and pushing it.
 """
 from datetime import datetime
-from logging import getLogger, DEBUG
+from logging import getLogger, DEBUG, INFO
 from os import access, chmod, environ, umask, W_OK
 from os.path import exists, join as path_join
 from tempfile import mkdtemp, TemporaryDirectory
@@ -24,6 +24,9 @@ ssh -oBatchMode=yes -oCheckHostIp=no -oKbdInteractiveAuthentication=no
 
 log = getLogger()
 log.setLevel(DEBUG)
+getLogger("boto3").setLevel(INFO)
+getLogger("botocore").setLevel(INFO)
+getLogger("urllib3").setLevel(INFO)
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """
