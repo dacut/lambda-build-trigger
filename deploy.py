@@ -131,8 +131,8 @@ def upload(src, bucket, key, acl):
             ACL=acl, Body=fd, Bucket=bucket, Key=key,
             ContentMD5=md5_hash,
             Metadata={
-                "x-amz-content-sha256": sha256_hash,
-                "x-amz-content-sha256-base64": sha256_b64hash,
+                "Content-SHA256": sha256_hash,
+                "Content-SHA256-Base64": sha256_b64hash,
             })
 
     log.info("Uploaded to s3://%s/%s", bucket, key)
